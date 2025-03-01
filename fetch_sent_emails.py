@@ -67,6 +67,23 @@ def extract_email_components(email_body):
         "closing": closing
     }
 
+def clean_greeting(greeting):
+    """Ensures greeting contains only the first line after Hi/Hello/Dear."""
+    if greeting:
+        greeting = greeting.strip()
+        greeting = greeting.split("\n")[0].strip()  # ✅ Stop at first line
+        greeting = re.sub(r"[\r\n]+", " ", greeting)  # ✅ Remove any extra newlines
+        return greeting
+    return None
+
+def clean_closing(closing):
+    """Removes forwarded metadata from closing and ensures it's properly formatted."""
+    if closing:
+        closing = closing.strip()
+        closing = re.sub(r"\nOn .* wrote:.*", "", closing, flags=re.DOTALL)  # ✅ Remove forwarded metadata
+        closing = re.sub(r"[\r\n]+", " ", closing)  # ✅ Replace extra newlines with spaces
+        return closing.strip()
+    return None
 def clean_email_body(email_text):
     """Removes signatures, disclaimers, and forwarded content."""
     
@@ -107,8 +124,11 @@ def get_clean_sent_emails(max_results=10):
 
         # Decode and clean email body
         email_body = decode_email_body(payload)
-        email_body = clean_email_body(email_body)
         structured_email = extract_email_components(email_body)
+
+        # ✅ Fix Greeting & Closing Before Storing
+        structured_email["greeting"] = clean_greeting(structured_email["greeting"])
+        structured_email["closing"] = clean_closing(structured_email["closing"])
 
         # Store structured email securely
         insert_email(subject, structured_email["greeting"], structured_email["body"], structured_email["closing"])
@@ -122,11 +142,9 @@ def get_clean_sent_emails(max_results=10):
         })
 
     return cleaned_emails
-if __name__ == "__main__":
-    sent_emails = get_clean_sent_emails(5)
-    print("\nStored Emails in Secure DB ✅")
+
 # def get_clean_sent_emails(max_results=10):
-#     """Fetch and preprocess sent emails from Gmail."""
+#     """Fetch, preprocess, and store sent emails securely."""
 #     creds = gmail_authenticate()
 #     service = build("gmail", "v1", credentials=creds)
 
@@ -154,7 +172,10 @@ if __name__ == "__main__":
 #         email_body = clean_email_body(email_body)
 #         structured_email = extract_email_components(email_body)
 
-#         # Store structured email
+#         # Store structured email securely
+#         insert_email(subject, structured_email["greeting"], structured_email["body"], structured_email["closing"])
+
+#         # Append to in-memory list
 #         cleaned_emails.append({
 #             "subject": subject,
 #             "greeting": structured_email["greeting"],
@@ -164,13 +185,8 @@ if __name__ == "__main__":
 
 #     return cleaned_emails
 
-# if __name__ == "__main__":
-#     sent_emails = get_clean_sent_emails(5)
-#     for email in sent_emails:
-#         print("\n--- Email ---")
-#         print("Subject:", email["subject"])
-#         print("Greeting:", email["greeting"])
-#         print("Body:", email["body"])
-#         print("Closing:", email["closing"])
+if __name__ == "__main__":
+    sent_emails = get_clean_sent_emails(5)
+    print("\nStored Emails in Secure DB ✅")
 
 

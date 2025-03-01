@@ -1,5 +1,18 @@
 token.pickle
 credentials.json
-__pycache__/
 .vscode/
+
+# Ignore SQLite database and compiled Python files
+emails_secure.db
+__pycache__/
+*.pyc
+*.pyo
+*.log
+
+# Ignore virtual environments
+venv/
 .env
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
