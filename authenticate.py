@@ -1,0 +1,32 @@
+import os
+import pickle
+import google.auth
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+# OAuth Scopes - Read-Only Access to Gmail
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+
+def gmail_authenticate():
+    """Authenticate with Gmail API and return service object."""
+    creds = None
+
+    # Load credentials from token.pickle if available
+    if os.path.exists("token.pickle"):
+        with open("token.pickle", "rb") as token:
+            creds = pickle.load(token)
+
+    # If no valid credentials, authenticate user
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+            creds = flow.run_local_server(port=8080)
+
+        # Save credentials for next time
+        with open("token.pickle", "wb") as token:
+            pickle.dump(creds, token)
+
+    return creds
