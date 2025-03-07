@@ -1,76 +1,107 @@
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
-from secure_storage import fetch_all_emails  # Fetch stored emails
 import os
+import numpy as np
+import faiss
+from sentence_transformers import SentenceTransformer
+from secure_storage import fetch_all_emails 
 
-# Save embeddings after first indexing
-def save_embeddings():
-    np.save("email_embeddings.npy", index.reconstruct_n(0, index.ntotal))
-    print("✅ Saved embeddings for faster retrieval.")
+model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", device="cuda")
+D = 384  
+index = faiss.IndexFlatIP(D)  
+email_lookup = {} 
 
 def load_embeddings():
-    if os.path.exists("email_embeddings.npy"):
-        global index
-        embeddings = np.load("email_embeddings.npy")
+    """Load saved FAISS embeddings + email_lookup if they exist."""
+    emb_path = "email_embeddings.npy"
+    lookup_path = "email_lookup.npy"
+    if os.path.exists(emb_path) and os.path.exists(lookup_path):
+        index.reset()  
+        embeddings = np.load(emb_path)
         index.add(embeddings)
-        print("✅ Loaded saved embeddings.")
+        print(f"✅ Loaded {index.ntotal} embeddings into FAISS from {emb_path}.")
 
-# Load the embedding model
-# model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", device="cuda")
+        global email_lookup
+        email_lookup = np.load(lookup_path, allow_pickle=True).item()
+        print(f"✅ email_lookup loaded with {len(email_lookup)} entries.")
+    else:
+        print("⚠️ No saved FAISS data found. Starting empty index.")
 
-# FAISS index for Cosine Similarity (Use Inner Product, then normalize)
-D = 384  # Embedding size for MiniLM
-index = faiss.IndexFlatIP(D)  # Inner Product (Cosine requires normalization)
+def save_embeddings():
+    """Re-extract all from FAISS and save them + email_lookup."""
+    if index.ntotal > 0:
+        # Reconstruct all vectors from index
+        all_vecs = index.reconstruct_n(0, index.ntotal)
+        np.save("email_embeddings.npy", all_vecs)
+        np.save("email_lookup.npy", email_lookup)
+        print(f"✅ Saved {index.ntotal} embeddings + {len(email_lookup)} in email_lookup.")
+    else:
+        print("⚠️ Index is empty; nothing to save.")
 
-# Dictionary to map index IDs to email content
-email_lookup = {}
+def add_new_emails_to_faiss():
+    """
+    1) Load existing data (if not loaded yet)
+    2) Retrieve emails from DB
+    3) Embed + add only those not in email_lookup
+    4) Save updated state
+    """
+    if index.ntotal == 0 and not email_lookup:
+        load_embeddings() 
 
-def build_vector_database():
-    """Embeds past emails and stores them in FAISS for retrieval using Cosine Similarity."""
-    global email_lookup
-    emails = fetch_all_emails()
-
-    if os.path.exists("email_embeddings.npy"):
-        load_embeddings()
+    emails = fetch_all_emails()  # from SQLite
+    if not emails:
+        print("⚠️ No emails found in DB.")
         return
 
-    email_texts = []
+    new_texts = []
+    start_count = len(email_lookup)
     for idx, (subject, greeting, body, closing) in enumerate(emails):
+        if idx in email_lookup:
+            continue  # Already indexed
         full_text = f"{subject} {greeting} {body} {closing}"
-        email_texts.append(full_text)
-        email_lookup[idx] = full_text  # Store original text mapping
+        email_lookup[idx] = full_text
+        new_texts.append(full_text)
 
-    embeddings = model.encode(email_texts, convert_to_numpy=True)
-    faiss.normalize_L2(embeddings)  # Normalize for Cosine Similarity
-    index.add(embeddings)
-    
+    if not new_texts:
+        print("✅ No new emails to index. Up to date.")
+        return
+
+    # Encode only new emails
+    new_embeddings = model.encode(new_texts, convert_to_numpy=True)
+    faiss.normalize_L2(new_embeddings)
+
+    # Add them to FAISS
+    index.add(new_embeddings)
+
+    # Save updated data
     save_embeddings()
-    print(f"✅ Indexed {len(email_texts)} emails in vector database.")
-
+    added_count = len(email_lookup) - start_count
+    print(f"✅ Indexed {added_count} new emails in FAISS.")
 
 def retrieve_similar_emails(query, top_k=3):
-    """Finds past emails most similar to the current query using Cosine Similarity."""
-    query_embedding = model.encode([query], convert_to_numpy=True)
+    """Search FAISS for top-k most similar emails."""
+    if index.ntotal == 0:
+        print("⚠️ FAISS is empty, no emails to retrieve.")
+        return []
 
-    # 🔹 Normalize query embedding
-    faiss.normalize_L2(query_embedding)
+    query_emb = model.encode([query], convert_to_numpy=True)
+    faiss.normalize_L2(query_emb)
+    distances, indices = index.search(query_emb, top_k)
 
-    # Search in FAISS
-    D, I = index.search(query_embedding, top_k)
+    print("\n🔍 Indices:", indices[0])
+    print("🔍 Distances:", distances[0])
+    print("🔍 email_lookup keys:", list(email_lookup.keys()))
 
-    # Retrieve top-k similar emails
-    similar_emails = [email_lookup[i] for i in I[0] if i >= 0]
-    return similar_emails
+    results = []
+    for i in indices[0]:
+        if i in email_lookup:
+            results.append(email_lookup[i])
+        else:
+            print(f"⚠️ Index {i} not found in email_lookup.")
+    return results
 
-
-# Run this to build the database on startup
 if __name__ == "__main__":
-    build_vector_database()
+    add_new_emails_to_faiss() 
     query = "Meeting about CSCE 638 grader discussion"
-    retrieved_emails = retrieve_similar_emails(query)
-
-    print("\n🔍 Top Similar Emails Retrieved:")
-    for email in retrieved_emails:
-        print(f"- {email}...\n") 
+    hits = retrieve_similar_emails(query)
+    print("\nTop Similar Emails:")
+    for h in hits:
+        print("- ", h[:100], "...\n")

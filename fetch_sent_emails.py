@@ -19,7 +19,7 @@ def extract_text_from_parts(parts):
             html_content = base64.urlsafe_b64decode(data).decode("utf-8")
             return BeautifulSoup(html_content, "html.parser").get_text(separator=" ").strip()
 
-        elif "parts" in part:  # If nested, recurse deeper
+        elif "parts" in part: 
             text = extract_text_from_parts(part["parts"])
             if text:
                 return text
@@ -28,10 +28,10 @@ def extract_text_from_parts(parts):
 
 def decode_email_body(payload):
     """Handles different email structures to extract the full body."""
-    if "parts" in payload:  # Multipart email (most cases)
+    if "parts" in payload: 
         return extract_text_from_parts(payload["parts"])
     
-    elif "body" in payload and "data" in payload["body"]:  # Single-part email
+    elif "body" in payload and "data" in payload["body"]: 
         data = payload["body"]["data"]
         return base64.urlsafe_b64decode(data).decode("utf-8").strip()
 
@@ -71,8 +71,8 @@ def clean_greeting(greeting):
     """Ensures greeting contains only the first line after Hi/Hello/Dear."""
     if greeting:
         greeting = greeting.strip()
-        greeting = greeting.split("\n")[0].strip()  # ✅ Stop at first line
-        greeting = re.sub(r"[\r\n]+", " ", greeting)  # ✅ Remove any extra newlines
+        greeting = greeting.split("\n")[0].strip() 
+        greeting = re.sub(r"[\r\n]+", " ", greeting)  
         return greeting
     return None
 
@@ -80,8 +80,8 @@ def clean_closing(closing):
     """Removes forwarded metadata from closing and ensures it's properly formatted."""
     if closing:
         closing = closing.strip()
-        closing = re.sub(r"\nOn .* wrote:.*", "", closing, flags=re.DOTALL)  # ✅ Remove forwarded metadata
-        closing = re.sub(r"[\r\n]+", " ", closing)  # ✅ Replace extra newlines with spaces
+        closing = re.sub(r"\nOn .* wrote:.*", "", closing, flags=re.DOTALL) 
+        closing = re.sub(r"[\r\n]+", " ", closing)  
         return closing.strip()
     return None
 def clean_email_body(email_text):
@@ -98,14 +98,25 @@ def clean_email_body(email_text):
 
     return email_text.strip()
 
-def get_clean_sent_emails(max_results=10):
-    """Fetch, preprocess, and store sent emails securely."""
+
+def get_clean_sent_emails(max_results=None):
+    """Fetch & store sent emails (get all if max_results not specified)."""
     creds = gmail_authenticate()
     service = build("gmail", "v1", credentials=creds)
 
-    results = service.users().messages().list(
-        userId="me", labelIds=["SENT"], maxResults=max_results
-    ).execute()
+    if max_results:
+        results = service.users().messages().list(
+            userId="me", labelIds=["SENT"], maxResults=max_results
+        ).execute()
+    else:
+        results = service.users().messages().list(
+            userId="me", labelIds=["SENT"]
+        ).execute()
+
+
+    # results = service.users().messages().list(
+    #     userId="me", labelIds=["SENT"], maxResults=max_results
+    # ).execute()
     
     messages = results.get("messages", [])
 
@@ -126,7 +137,7 @@ def get_clean_sent_emails(max_results=10):
         email_body = decode_email_body(payload)
         structured_email = extract_email_components(email_body)
 
-        # ✅ Fix Greeting & Closing Before Storing
+        # Fix Greeting & Closing Before Storing
         structured_email["greeting"] = clean_greeting(structured_email["greeting"])
         structured_email["closing"] = clean_closing(structured_email["closing"])
 
@@ -143,50 +154,8 @@ def get_clean_sent_emails(max_results=10):
 
     return cleaned_emails
 
-# def get_clean_sent_emails(max_results=10):
-#     """Fetch, preprocess, and store sent emails securely."""
-#     creds = gmail_authenticate()
-#     service = build("gmail", "v1", credentials=creds)
-
-#     results = service.users().messages().list(
-#         userId="me", labelIds=["SENT"], maxResults=max_results
-#     ).execute()
-    
-#     messages = results.get("messages", [])
-
-#     if not messages:
-#         print("No sent emails found.")
-#         return []
-
-#     cleaned_emails = []
-#     for msg in messages:
-#         msg_details = service.users().messages().get(userId="me", id=msg["id"]).execute()
-
-#         # Extract subject from headers
-#         payload = msg_details.get("payload", {})
-#         headers = payload.get("headers", [])
-#         subject = next((h["value"] for h in headers if h["name"] == "Subject"), "No Subject")
-
-#         # Decode and clean email body
-#         email_body = decode_email_body(payload)
-#         email_body = clean_email_body(email_body)
-#         structured_email = extract_email_components(email_body)
-
-#         # Store structured email securely
-#         insert_email(subject, structured_email["greeting"], structured_email["body"], structured_email["closing"])
-
-#         # Append to in-memory list
-#         cleaned_emails.append({
-#             "subject": subject,
-#             "greeting": structured_email["greeting"],
-#             "body": structured_email["body"],
-#             "closing": structured_email["closing"]
-#         })
-
-#     return cleaned_emails
-
 if __name__ == "__main__":
-    sent_emails = get_clean_sent_emails(5)
+    sent_emails = get_clean_sent_emails()
     print("\nStored Emails in Secure DB ✅")
 
 

@@ -1,7 +1,7 @@
 token.pickle
 credentials.json
 .vscode/
-email_embeddings.npy
+*.npy
 # Ignore SQLite database and compiled Python files
 emails_secure.db
 __pycache__/

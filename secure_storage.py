@@ -7,8 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DB_NAME = "emails_secure.db"
-SECRET_KEY = os.getenv("SECRET_KEY")  # Load secret key from .env
-
+SECRET_KEY = os.getenv("SECRET_KEY") 
 def hash_password(password):
     """Hashes a password using SHA-256 for simple security."""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -33,25 +32,12 @@ def initialize_database():
         conn.commit()
         conn.close()
 
-# def insert_email(subject, greeting, body, closing):
-#     """Inserts an email into the SQLite database."""
-#     conn = sqlite3.connect(DB_NAME)
-#     cursor = conn.cursor()
-
-#     cursor.execute("""
-#         INSERT INTO emails (subject, greeting, body, closing)
-#         VALUES (?, ?, ?, ?);
-#     """, (subject, greeting, body, closing))
-
-#     conn.commit()
-#     conn.close()
-
 def insert_email(subject, greeting, body, closing):
     """Inserts email into SQLite storage while preventing duplicates."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # ✅ Check if email already exists
+    # Check if email already exists
     cursor.execute(
         """
         SELECT COUNT(*) FROM emails 
@@ -92,7 +78,7 @@ def remove_duplicates():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # ✅ Find duplicate entries (same subject & body)
+    # Find duplicate entries (same subject & body)
     cursor.execute(
         """
         DELETE FROM emails
