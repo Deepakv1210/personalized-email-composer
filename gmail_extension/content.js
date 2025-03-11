@@ -1,37 +1,72 @@
 console.log("📩 Gmail AI Assistant Loaded!");
+setInterval(() => {
+    injectAIButton();
+}, 2000);
 
-function addAIButton() {
-    const composeToolbar = document.querySelector(".aoD.az6");
-
-    if (composeToolbar && !document.getElementById("ai-suggest-button")) {
+function injectAIButton() {
+    // classes vary depending on new/reply
+    const toolbars = document.querySelectorAll(".aoD.az6, .aoD.aZ6, .aDh");
+  
+    toolbars.forEach((toolbar) => {
+      if (!toolbar.querySelector("#ai-suggest-button")) {
         let aiButton = document.createElement("button");
         aiButton.id = "ai-suggest-button";
         aiButton.innerText = "✨ AI Suggest";
-        aiButton.style = "margin-left: 10px; padding: 5px; border-radius: 5px; background: #4285F4; color: white; cursor: pointer;";
-        
-        aiButton.onclick = async function () {
-            let emailBody = document.querySelector(".Am.Al.editable").innerText;
-            let subject = document.querySelector("input[name='subjectbox']").value;
-            
-            if (!emailBody.trim()) {
-                alert("⚠️ Please type an email before requesting AI suggestions.");
-                return;
-            }
+        aiButton.style = "margin-left: 10px; ... your styling ...";
+  
+        aiButton.onclick = handleAIRequest;
+        toolbar.appendChild(aiButton);
+  
+        console.log("✨ AI Button Added inside compose toolbar!", toolbar);
+      }
+    });
+  }
 
-            console.log("📝 Sending email draft to AI...");
-            let response = await fetch("http://localhost:5000/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ subject: subject, body: emailBody })
-            });
-
-            let data = await response.json();
-            document.querySelector(".Am.Al.editable").innerText = data.suggestion;
-        };
-
-        composeToolbar.appendChild(aiButton);
-        console.log("✨ AI Button Added!");
+function detectComposeType() {
+    let subjectText = document.querySelector("input[name='subjectbox']")?.value || "";
+    let bodyText = document.querySelector(".Am.Al.editable")?.innerText || "";
+    if (subjectText.startsWith("Re:") || bodyText.includes("On ") || bodyText.includes("wrote:")) {
+        return "reply";
     }
+    return "new";
 }
 
-setInterval(addAIButton, 2000); 
+async function handleAIRequest() {
+    let subjectInput = document.querySelector("input[name='subjectbox']");
+    if (!subjectInput) {
+      console.warn("No subject box found! Possibly a reply scenario. We'll use a fallback subject.");
+    }
+  
+    // reading the subject if it's defined
+    let subject = subjectInput ? subjectInput.value : "(No Subject)";
+  
+    // check for the body
+    let bodyElem = document.querySelector(".Am.Al.editable");
+    if (!bodyElem) {
+      console.warn("No compose body found! Possibly the user hasn't opened the compose fully?");
+      return;
+    }
+    let emailBody = bodyElem.innerText;
+    let postData = {
+      subject: subject,
+      body: emailBody,
+      composeType: detectComposeType()
+    };
+    console.log("📝 Sending data to AI server:", postData);
+
+    let response = await fetch("http://localhost:5000/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postData)
+    });
+
+    let data = await response.json();
+    console.log("AI server responded with:", data);
+
+    // insert AI suggestion
+    let editable = document.querySelector(".Am.Al.editable");
+    if (editable && data.suggestion) {
+        editable.innerText = data.suggestion;
+    }
+}
+  

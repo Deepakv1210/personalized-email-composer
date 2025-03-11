@@ -10,7 +10,6 @@ index = faiss.IndexFlatIP(D)
 email_lookup = {} 
 
 def load_embeddings():
-    """Load saved FAISS embeddings + email_lookup if they exist."""
     emb_path = "email_embeddings.npy"
     lookup_path = "email_lookup.npy"
     if os.path.exists(emb_path) and os.path.exists(lookup_path):
@@ -26,7 +25,6 @@ def load_embeddings():
         print("⚠️ No saved FAISS data found. Starting empty index.")
 
 def save_embeddings():
-    """Re-extract all from FAISS and save them + email_lookup."""
     if index.ntotal > 0:
         # Reconstruct all vectors from index
         all_vecs = index.reconstruct_n(0, index.ntotal)
@@ -100,7 +98,7 @@ def retrieve_similar_emails(query, top_k=3):
 
 if __name__ == "__main__":
     add_new_emails_to_faiss() 
-    query = "Meeting about CSCE 638 grader discussion"
+    query = "Regarding grading discussion"
     hits = retrieve_similar_emails(query)
     print("\nTop Similar Emails:")
     for h in hits:
