@@ -3,6 +3,16 @@
 ## 📌 Overview
 This project is a **Gmail AI Assistant** that enhances email composition and replies using AI-powered suggestions. The assistant integrates directly into Gmail via a **browser extension**, analyzing the user's past emails to generate **context-aware** and **personalized** responses.
 
+## Demo
+
+### 1. Composing a New Email
+To get an personalized AI-suggested response:
+[![Composing New Mail Demo](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/composing_mail.mp4)](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/composing_mail.mp4)
+
+### 2. Replying to an Existing Email
+To get the personalized AI suggests within a conversation thread:
+[![Reply Demo](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/reply_mail.mp4)]([https://example.com/your-reply-demo.mp4](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/reply_mail.mp4))
+
 ## 🚀 Features Implemented So Far
 ### ✅ **Gmail API Integration**
 - Successfully integrated Gmail API for **OAuth authentication**.
