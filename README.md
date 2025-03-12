@@ -13,14 +13,14 @@ This project is a **Gmail AI Assistant** that enhances email composition and rep
 - An **AI Suggest button** in Gmail where it generates responses **matching the user’s tone and writing style**.
 - Implemented **Retrieval-Augmented Generation (RAG)** for better contextual responses.
 
-### ✅ **Browser Extension Implementation**
+### ✅ **Browser Extension**
 - Integrated AI functionality directly into **Gmail's UI** for seamless user experience.
 
 ## 🔧 Installation & Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/gmail-ai-assistant.git
-   cd gmail-ai-assistant
+   git clone https://github.com/Deepakv1210/personalized-email-composer.git
+   cd personalized-email-composer
   
 2. Install Dependencies
    ```bash
@@ -56,7 +56,6 @@ This project is a **Gmail AI Assistant** that enhances email composition and rep
 - **Transition** from RAG-only to a **hybrid RAG + fine-tuning** approach for deeper personalization.
 - **Optimize performance** & reduce latency for email suggestions.
 - **Real-time autocomplete implementation** while typing.
-- **Ensure privacy** & security compliance (encrypt or anonymize user data, follow Gmail API policies).
 
 ---
 
