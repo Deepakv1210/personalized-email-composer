@@ -71,4 +71,4 @@ All contributions are welcome — feel free to add new features, improve the UI 
 ---
 
 ### 👤 Maintainer
-[Deepak]([https://github.com/Deepakv1210])
+[Deepak](https://github.com/Deepakv1210)
