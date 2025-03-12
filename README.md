@@ -8,12 +8,12 @@ This project is a **Gmail AI Assistant** that enhances email composition and rep
 ### 1. Composing a New Email
 To get a personalized AI-suggested response:
 
-[Composing New Mail Demo](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/composing_mail.mp4)
+[![Composing New Mail Demo](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/compose.png)](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/composing_mail.mp4)
 
 ### 2. Replying to an Existing Email
 To get a personalized AI suggestion within a conversation thread:
 
-[Reply Demo](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/reply_mail.mp4)
+[![Reply Demo](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/reply.png)](https://github.com/Deepakv1210/personalized-email-composer/blob/main/demo/reply_mail.mp4)
 
 
 ## 🚀 Features Implemented So Far
